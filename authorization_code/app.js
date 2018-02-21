@@ -18,6 +18,7 @@ var client_secret = authConfig.CLIENT_SECRET;
 var redirect_uri = 'http://localhost:8888/callback'; // Redirect uri set here: https://developer.spotify.com/my-applications/
 
 var spotifyController = require('./public/scripts/spotifyController')
+var raController = require('./public/scripts/raController')
 
 /**
  * Generates a random string containing numbers and letters
@@ -58,104 +59,21 @@ app.get('/login', function(req, res) {
     }));
 });
 
-app.get('/callback', function(req, res) {
-
-  // your application requests refresh and access tokens
-  // after checking the state parameter
-
-  var code = req.query.code || null;
-  var state = req.query.state || null;
-  var storedState = req.cookies ? req.cookies[stateKey] : null;
-
-  if (state === null || state !== storedState) {
-    res.redirect('/#' +
-      querystring.stringify({
-        error: 'state_mismatch'
-      }));
-  } else {
-    res.clearCookie(stateKey);
-    var authOptions = {
-      url: 'https://accounts.spotify.com/api/token',
-      form: {
-        code: code,
-        redirect_uri: redirect_uri,
-        grant_type: 'authorization_code'
-      },
-      headers: {
-        'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64'))
-      },
-      json: true
-    };
-
-    // make a post request w/ form to Spotify, which returns response with access and refresh token
-    // these token authorize the client (browser / user) to make API requests
-    request.post(authOptions, function(error, response, body) {
-      if (!error && response.statusCode === 200) {
-
-        var access_token = body.access_token,
-            refresh_token = body.refresh_token;
-
-        var options = {
-          url: 'https://api.spotify.com/v1/me',
-          headers: { 'Authorization': 'Bearer ' + access_token },
-          json: true
-        };
-
-        // use the access token, passed in the header of the request, to access the Spotify Web API
-        // get request to the "me" endpoint returns user data
-        request.get(options, function(error, response, body) {
-          console.log(body);
-        });
-
-        // we can also pass the token to the browser to make requests from there
-        res.redirect('/#' +
-          querystring.stringify({
-            access_token: access_token,
-            refresh_token: refresh_token
-          }));
-      } else {
-        res.redirect('/#' +
-          querystring.stringify({
-            error: 'invalid_token'
-          }));
-      }
-    });
-  }
-});
+// refactor so callback route makes some data requests as get /ra-charts
+app.get('/callback', spotifyController.initAuth);
 
 // click "GET TRACKLIST" handles get request to /ra-charts  
 // get request passes off to spotifyController
 // spotifyController redirects client to /ra-charts endpoint with JSON data
 app.use('/ra-charts', function(req, res, next) {
   res.setHeader('Content-Type', 'application/json');
-  req.setHeader('Authorization', 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')));
+  // res.writeHead('Authorization', 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')));
   next();
 })
-app.get('/ra-charts', spotifyController.getArtist);
 
-app.get('/refresh_token', function(req, res) {
+app.get('/ra-charts', raController.getRAData, spotifyController.getArtist);
 
-  // requesting access token from refresh token
-  var refresh_token = req.query.refresh_token;
-  var authOptions = {
-    url: 'https://accounts.spotify.com/api/token',
-    headers: { 'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')) },
-    form: {
-      grant_type: 'refresh_token',
-      refresh_token: refresh_token
-    },
-    json: true
-  };
-
-  request.post(authOptions, function(error, response, body) {
-    if (!error && response.statusCode === 200) {
-      var access_token = body.access_token;
-      res.send({
-        'access_token': access_token
-      });
-    }
-  });
-});
+app.get('/refresh_token', spotifyController.refreshToken);
 
 console.log('Listening on 8888');
 app.listen(8888);
