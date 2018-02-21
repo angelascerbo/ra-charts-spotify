@@ -17,6 +17,8 @@ var client_id = authConfig.CLIENT_ID;
 var client_secret = authConfig.CLIENT_SECRET; 
 var redirect_uri = 'http://localhost:8888/callback'; // Redirect uri set here: https://developer.spotify.com/my-applications/
 
+var spotifyController = require('./public/scripts/spotifyController')
+
 /**
  * Generates a random string containing numbers and letters
  * @param  {number} length The length of the string
@@ -85,6 +87,8 @@ app.get('/callback', function(req, res) {
       json: true
     };
 
+    // make a post request w/ form to Spotify, which returns response with access and refresh token
+    // these token authorize the client (browser / user) to make API requests
     request.post(authOptions, function(error, response, body) {
       if (!error && response.statusCode === 200) {
 
@@ -97,7 +101,8 @@ app.get('/callback', function(req, res) {
           json: true
         };
 
-        // use the access token to access the Spotify Web API
+        // use the access token, passed in the header of the request, to access the Spotify Web API
+        // get request to the "me" endpoint returns user data
         request.get(options, function(error, response, body) {
           console.log(body);
         });
@@ -117,6 +122,16 @@ app.get('/callback', function(req, res) {
     });
   }
 });
+
+// click "GET TRACKLIST" handles get request to /ra-charts  
+// get request passes off to spotifyController
+// spotifyController redirects client to /ra-charts endpoint with JSON data
+app.use('/ra-charts', function(req, res, next) {
+  res.setHeader('Content-Type', 'application/json');
+  req.setHeader('Authorization', 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')));
+  next();
+})
+app.get('/ra-charts', spotifyController.getArtist);
 
 app.get('/refresh_token', function(req, res) {
 
