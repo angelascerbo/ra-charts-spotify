@@ -3,22 +3,24 @@ $( document ).ready(() => {
     raChartsTemplate = Handlebars.compile(raChartsSource),
     raChartsPlaceholder = $('#ra-charts');
 
-	$('#obtain-dj-charts').on('click', (e) => {
-		e.preventDefault;
-		$.ajax({
-			url: '/ra-charts',
-			type: 'GET',
-			success: function(response) {
-				response.forEach((artist) => {
-					let raChartContent = {
-						name: artist.name
-					}
+  $('#obtain-dj-charts').on('click', (e) => {
+    e.preventDefault;
+    $.ajax({
+      url: '/ra-charts',
+      type: 'GET',
+      success: function(response) {
+        response.forEach((artist) => {
+          if (Object.keys(artist).length) {
+            let raChartContent = {
+              name: artist.name,
+              url: artist.external_urls.spotify
+            }
 
-					let compileTemplate = raChartsTemplate(raChartContent); 
-	        raChartsPlaceholder.append(compileTemplate);	
-				})
-				
+            let compileTemplate = raChartsTemplate(raChartContent); 
+            raChartsPlaceholder.append(compileTemplate);
+          }
+        })
       }
-		})
-	})
+    })
+  })
 });

@@ -35,7 +35,8 @@ const raController = {
 
         let $ = cheerio.load(html);
         const djObj = {};
-        djObj.tracks = {};
+        djObj.tracksByArtist = {};
+        djObj.tracks = []; 
 
         const djName = $('#featureHead').find('h1').html();
         djObj['dj_name'] = djName;
@@ -58,13 +59,15 @@ const raController = {
           }
 
           // if artist exists in tracks, push track title to array 
-          if (djObj.tracks[artist]) {
-            djObj.tracks[artist].push(title);
+          if (djObj.tracksByArtist[artist]) {
+            djObj.tracksByArtist[artist].push(title);
           } else {
             // else create a new artist property in tracks
-            djObj.tracks[artist] = [];
-            djObj.tracks[artist].push(title);
+            djObj.tracksByArtist[artist] = [];
+            djObj.tracksByArtist[artist].push(title);
           }
+
+          djObj.tracks.push(title);
         })
 
         return resolve(djObj);

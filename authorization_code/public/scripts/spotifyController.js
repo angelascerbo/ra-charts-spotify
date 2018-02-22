@@ -113,11 +113,15 @@ const spotifyController = {
   getArtist: (req, res, next) => {
     //console.log('getArtist', JSON.stringify(res.locals, null, 4))
     //djName becomes djObject, query by producers in djObject.tracks
-    const promises = res.locals.map((djObj) => { 
-      return new Promise((resolve, reject) => {
+    const promises = [];
+    res.locals.forEach((djObj) => {
+      //console.log(Object.keys(djObj.tracksByArtist));
+      Object.keys(djObj.tracksByArtist).forEach((djName) => {
+        //console.log(djName);
+        let promise = new Promise((resolve, reject) => {
         // fetch url for each artist in tracks object
         // within each artist fetch do a fetch for tracks
-        const djName = djObj.dj_name;
+        //const djName = djObj.dj_name;
         const FETCH_URL = BASE_URL + 'q='+djName+'&type=artist&limit=1';
 
         const myOptions = {
@@ -134,9 +138,9 @@ const spotifyController = {
           .then(json => {
             if (json.artists && json.artists.items[0]) {
               const artist = json.artists.items[0];
-              console.log('artist', artist);
+              //console.log('artist', artist);
               const artistID = artist.id; 
-              console.log('artistID', artistID)
+              //console.log('artistID', artistID)
               //spotifyController.getTrack(myOptions, artistID); 
 
               // pass djObj.dj_name to resolve i.e. Promise.all
@@ -144,20 +148,21 @@ const spotifyController = {
             } else {
               resolve({});
             }
-            
           })
           .catch(error => {
             console.error(error)
             //return reject(error);
           })
+        })
+
+        promises.push(promise);
       })
     })
 
-    const testArr = [];
-    testArr.push(promises[0]);
 
-    Promise.all(testArr).then((artist) => {
+    Promise.all(promises).then((artist) => {
       res.setHeader('Content-Type', 'application/json');
+      console.log(artist);
       res.send(JSON.stringify(artist));
     })
     .catch((error) => {
@@ -168,25 +173,69 @@ const spotifyController = {
   // create function for second get request, that returns a promise
   // invoke function in the promise of the first get request
 
-  getTrack: (myOptions, artistID) => {
-    const FETCH_URL = BASE_URL + 'artists/'+artistID+'/top-tracks';
+  //getTrack: (myOptions, artistID) => {
+  getTrack: (req, res, next) => {
+    // res.locals is an array of objects
+    // each object has a DJ name property, which needs to be passed to response to FE
+    // each object has a tracks property, tracks is an object
+    // track object values = track titles
 
-    return new Promise ((resolve, reject) => {
-      fetch(FETCH_URL, myOptions)
-        .then(response => response.json())
-        .then(json => {
-          // const artist = json.artists.items[0];
-          // const artistID == json.artists.items[0].id;
+    let arrPromises = [];
 
-          // getTrack(FETCH_URL, myOptions, artistID);
-          // // pass djObj.dj_name to resolve i.e. Promise.all
-          console.log(json);
-          resolve(json)
-        })
-        .catch((error) => {
-          console.error(error)
-        })
-    });
+    res.locals.forEach((djObj) => {
+      let trackArr =  Object.values(djObj.tracks);
+
+      trackArr.forEach((track, index) => {
+        arrPromises.push(fetchTrack(track));
+      })
+    })
+
+    function fetchTrack(track) {
+      console.log(encodeURI(track));
+      return new Promise((resolve, reject) => {
+        const FETCH_URL = BASE_URL + 'q='+track+'&type=track&limit=1';
+
+        const myOptions = {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer ' + authConfig.ACCESS_TOKEN
+          },
+          mode: 'cors',
+          cache: 'default'
+        };
+
+        fetch(FETCH_URL, myOptions)
+          .then(response => response.json())
+          .then(json => {
+            if (json.tracks && json.tracks.items[0]) {
+              const track = json.tracks.items[0];
+              //console.log('track', track);
+              const artistID = track.id; 
+              //console.log('artistID', artistID)
+              //spotifyController.getTrack(myOptions, artistID); 
+
+              // pass djObj.dj_name to resolve i.e. Promise.all
+              resolve(track)
+            } else {
+              resolve({});
+            }
+            
+          })
+          .catch(error => {
+            console.error(error)
+            //return reject(error);
+          })
+      });
+    }
+
+    Promise.all(arrPromises).then((tracks) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify(tracks));
+      // console.log(track);
+    })
+    .catch((error) => {
+      console.error(error);
+    })
   }
 }
 
