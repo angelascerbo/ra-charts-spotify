@@ -111,18 +111,13 @@ const spotifyController = {
   },
 
   getArtist: (req, res, next) => {
-    //console.log('getArtist', JSON.stringify(res.locals, null, 4))
-    //djName becomes djObject, query by producers in djObject.tracks
     const promises = [];
     res.locals.forEach((djObj) => {
-      //console.log(Object.keys(djObj.tracksByArtist));
-      Object.keys(djObj.tracksByArtist).forEach((djName) => {
-        //console.log(djName);
+      Object.keys(djObj.tracksByArtist).forEach((producer) => {
         let promise = new Promise((resolve, reject) => {
         // fetch url for each artist in tracks object
         // within each artist fetch do a fetch for tracks
-        //const djName = djObj.dj_name;
-        const FETCH_URL = BASE_URL + 'q='+djName+'&type=artist&limit=1';
+        const FETCH_URL = BASE_URL + 'q='+producer+'&type=artist&limit=1';
 
         const myOptions = {
           method: 'GET',
@@ -138,20 +133,24 @@ const spotifyController = {
           .then(json => {
             if (json.artists && json.artists.items[0]) {
               const artist = json.artists.items[0];
-              //console.log('artist', artist);
               const artistID = artist.id; 
-              //console.log('artistID', artistID)
-              //spotifyController.getTrack(myOptions, artistID); 
-
-              // pass djObj.dj_name to resolve i.e. Promise.all
-              resolve(artist)
+              return artistID;
             } else {
+              // resolve with empty data if artist isn't found so all promises don't reject
               resolve({});
             }
           })
+          .then(artistID => {
+            // djObj[producer] is an array of track titles
+            // filter the tracks fetched from Spotify by titles found in djObj
+            return spotifyController.getTracks(myOptions, artistID, djObj[producer]);
+          })
+          .then(tracks => {
+            resolve({ name: djObj.dj_name, tracks: tracks });
+          })
+          .then()
           .catch(error => {
             console.error(error)
-            //return reject(error);
           })
         })
 
@@ -173,69 +172,25 @@ const spotifyController = {
   // create function for second get request, that returns a promise
   // invoke function in the promise of the first get request
 
-  //getTrack: (myOptions, artistID) => {
-  getTrack: (req, res, next) => {
-    // res.locals is an array of objects
-    // each object has a DJ name property, which needs to be passed to response to FE
-    // each object has a tracks property, tracks is an object
-    // track object values = track titles
+  getTracks: (myOptions, artistID, trackTitles) => {
+    const FETCH_URL = BASE_URL + 'artists/'+artistID+'/top-tracks?country=US';
 
-    let arrPromises = [];
+    return new Promise ((resolve, reject) => {
+      fetch(FETCH_URL, myOptions)
+        .then(response => response.json())
+        .then(json => {
+          // const artist = json.artists.items[0];
+          // const artistID == json.artists.items[0].id;
 
-    res.locals.forEach((djObj) => {
-      let trackArr =  Object.values(djObj.tracks);
-
-      trackArr.forEach((track, index) => {
-        arrPromises.push(fetchTrack(track));
-      })
-    })
-
-    function fetchTrack(track) {
-      console.log(encodeURI(track));
-      return new Promise((resolve, reject) => {
-        const FETCH_URL = BASE_URL + 'q='+track+'&type=track&limit=1';
-
-        const myOptions = {
-          method: 'GET',
-          headers: {
-            'Authorization': 'Bearer ' + authConfig.ACCESS_TOKEN
-          },
-          mode: 'cors',
-          cache: 'default'
-        };
-
-        fetch(FETCH_URL, myOptions)
-          .then(response => response.json())
-          .then(json => {
-            if (json.tracks && json.tracks.items[0]) {
-              const track = json.tracks.items[0];
-              //console.log('track', track);
-              const artistID = track.id; 
-              //console.log('artistID', artistID)
-              //spotifyController.getTrack(myOptions, artistID); 
-
-              // pass djObj.dj_name to resolve i.e. Promise.all
-              resolve(track)
-            } else {
-              resolve({});
-            }
-            
-          })
-          .catch(error => {
-            console.error(error)
-            //return reject(error);
-          })
-      });
-    }
-
-    Promise.all(arrPromises).then((tracks) => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(tracks));
-      // console.log(track);
-    })
-    .catch((error) => {
-      console.error(error);
-    })
+          // getTracks(FETCH_URL, myOptions, artistID);
+          // // pass djObj.dj_name to resolve i.e. Promise.all
+          console.log('getTracks', json);
+          resolve(json)
+        })
+        .catch((error) => {
+          console.error(error)
+        })
+    });
   }
 }
 
