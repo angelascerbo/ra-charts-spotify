@@ -51,8 +51,6 @@ app.use(cookieParser());
 // })
 
 app.get('/login', function(req, res) {
-  console.log('login')
-
   var state = generateRandomString(16);
   res.cookie(stateKey, state);
 
@@ -71,6 +69,8 @@ app.get('/login', function(req, res) {
 // refactor so callback route makes some data requests as get /ra-charts
 app.get('/callback', spotifyController.initAuth);
 
+app.get('/authenticated', spotifyController.authenticated)
+
 // click "GET TRACKLIST" handles get request to /ra-charts  
 // get request passes off to spotifyController
 // spotifyController redirects client to /ra-charts endpoint with JSON data
@@ -84,7 +84,6 @@ app.get('/ra-charts', raController.getRAData, spotifyController.getArtist);
 
 app.get('/refresh_token', spotifyController.refreshToken);
 
-console.log('Listening on 8888');
 app.listen(8888, () => {
-  
+  console.log('Listening on 8888');  
 });

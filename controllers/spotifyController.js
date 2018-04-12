@@ -52,28 +52,17 @@ const spotifyController = {
               refresh_token = body.refresh_token;
 
           // store the access token to the local authConfig object
-          authConfig.ACCESS_TOKEN = access_token
-          // convert the local authConfig object to a buffer to write to file
-          fs.writeFileSync(configPath, Buffer.from(JSON.stringify(authConfig)))
+          // authConfig.ACCESS_TOKEN = access_token
+          // // convert the local authConfig object to a buffer to write to file
+          // fs.writeFileSync(configPath, Buffer.from(JSON.stringify(authConfig)))
 
-
-          var options = {
-            url: 'https://api.spotify.com/v1/me',
-            headers: { 'Authorization': 'Bearer ' + access_token },
-            json: true
-          };
-
-          // use the access token, passed in the header of the request, to access the Spotify Web API
-          // get request to the "me" endpoint returns user data
-          request.get(options, function(error, response, body) {
-            console.log('User info', body);
-          });
+          res.cookie('access_token', access_token);
+          res.cookie('refresh_token', refresh_token);
 
           // we can also pass the token to the browser to make requests from there
           res.redirect('/#' +
             querystring.stringify({
-              access_token: access_token,
-              refresh_token: refresh_token
+              authenticated: true
             }));
         } else {
           res.redirect('/#' +
@@ -85,8 +74,23 @@ const spotifyController = {
     }
   },
 
-  refreshToken: (req, res) => {
+  authenticated: (req, res) => {
+    const access_token = req.cookies.access_token;
 
+    var options = {
+      url: 'https://api.spotify.com/v1/me',
+      headers: { 'Authorization': 'Bearer ' + access_token },
+      json: true
+    };
+
+    // use the access token, passed in the header of the request, to access the Spotify Web API
+    // get request to the "me" endpoint returns user data
+    request.get(options, function(error, response, body) {
+      res.send(body)
+    });
+  },
+
+  refreshToken: (req, res) => {
     // requesting access token from refresh token
     var refresh_token = req.query.refresh_token;
     var authOptions = {
@@ -106,12 +110,12 @@ const spotifyController = {
           'access_token': access_token
         });
       }
-
-      console.log('refreshToken', access_token);
     });
   },
 
   getArtist: (req, res, next) => {
+    const access_token = req.cookies.access_token;
+
     const promises = [];
     res.locals.forEach((djObj) => {
       Object.keys(djObj.tracksByArtist).forEach((producer) => {
@@ -123,7 +127,7 @@ const spotifyController = {
         const myOptions = {
           method: 'GET',
           headers: {
-            'Authorization': 'Bearer ' + authConfig.ACCESS_TOKEN
+            'Authorization': 'Bearer ' + access_token
           },
           mode: 'cors',
           cache: 'default'
