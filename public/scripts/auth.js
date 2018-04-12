@@ -23,14 +23,14 @@
 
   var params = getHashParams();
 
-  var access_token = params.access_token,
-      refresh_token = params.refresh_token,
-      error = params.error;
+  // var access_token = params.access_token,
+  //     refresh_token = params.refresh_token,
+  //     error = params.error;
 
-  if (error) {
+  if (params.error) {
     alert('There was an error during the authentication');
   } else {
-    if (access_token) {
+    if (params.authenticated) {
       // render oauth info
       // oauthPlaceholder.innerHTML = oauthTemplate({
       //   access_token: access_token,
@@ -38,10 +38,10 @@
       // });
 
       $.ajax({
-          url: 'https://api.spotify.com/v1/me',
-          headers: {
-            'Authorization': 'Bearer ' + access_token
-          },
+          url: '/authenticated',
+          // headers: {
+          //   'Authorization': 'Bearer ' + access_token
+          // },
           success: function(response) {
             userProfilePlaceholder.innerHTML = userProfileTemplate(response);
 
