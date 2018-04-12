@@ -17,9 +17,9 @@
       userProfileTemplate = Handlebars.compile(userProfileSource),
       userProfilePlaceholder = document.getElementById('user-profile');
 
-  var oauthSource = document.getElementById('oauth-template').innerHTML,
-      oauthTemplate = Handlebars.compile(oauthSource),
-      oauthPlaceholder = document.getElementById('oauth');
+  // var oauthSource = document.getElementById('oauth-template').innerHTML,
+  //     oauthTemplate = Handlebars.compile(oauthSource),
+  //     oauthPlaceholder = document.getElementById('oauth');
 
   var params = getHashParams();
 
@@ -32,10 +32,10 @@
   } else {
     if (access_token) {
       // render oauth info
-      oauthPlaceholder.innerHTML = oauthTemplate({
-        access_token: access_token,
-        refresh_token: refresh_token
-      });
+      // oauthPlaceholder.innerHTML = oauthTemplate({
+      //   access_token: access_token,
+      //   refresh_token: refresh_token
+      // });
 
       $.ajax({
           url: 'https://api.spotify.com/v1/me',
@@ -62,11 +62,11 @@
           'refresh_token': refresh_token
         }
       }).done(function(data) {
-        access_token = data.access_token;
-        oauthPlaceholder.innerHTML = oauthTemplate({
-          access_token: access_token,
-          refresh_token: refresh_token
-        });
+        // access_token = data.access_token;
+        // oauthPlaceholder.innerHTML = oauthTemplate({
+        //   access_token: access_token,
+        //   refresh_token: refresh_token
+        // });
       });
     }, false);
   }
