@@ -6,7 +6,7 @@
  * For more information, read
  * https://developer.spotify.com/web-api/authorization-guide/#authorization_code_flow
  */
-
+const path = require('path');
 var express = require('express'); // Express web server framework
 var request = require('request'); // "Request" library
 var querystring = require('querystring');
@@ -17,8 +17,8 @@ var client_id = authConfig.CLIENT_ID;
 var client_secret = authConfig.CLIENT_SECRET; 
 var redirect_uri = 'http://localhost:8888/callback'; // Redirect uri set here: https://developer.spotify.com/my-applications/
 
-var spotifyController = require('./public/scripts/spotifyController')
-var raController = require('./public/scripts/raController')
+var spotifyController = require('./controllers/spotifyController')
+var raController = require('./controllers/raController')
 
 /**
  * Generates a random string containing numbers and letters
@@ -39,10 +39,19 @@ var stateKey = 'spotify_auth_state';
 
 var app = express();
 
-app.use(express.static(__dirname + '/public'))
-   .use(cookieParser());
+app.use(express.static(path.join(__dirname, './public')));
+app.use(cookieParser());
+
+// app.get('*/webpack-bundle.js', function(req, res) {
+//   res.sendFile(path.join(__dirname, './build/webpack-bundle.js'));
+// })
+
+// app.get('/', function (req, res) {
+//   res.sendFile(path.join(__dirname, './index.html'));
+// })
 
 app.get('/login', function(req, res) {
+  console.log('login')
 
   var state = generateRandomString(16);
   res.cookie(stateKey, state);
@@ -76,4 +85,6 @@ app.get('/ra-charts', raController.getRAData, spotifyController.getArtist);
 app.get('/refresh_token', spotifyController.refreshToken);
 
 console.log('Listening on 8888');
-app.listen(8888);
+app.listen(8888, () => {
+  
+});

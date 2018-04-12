@@ -5,7 +5,7 @@ const redirect_uri = 'http://localhost:8888/callback'; // Redirect uri set here:
 const stateKey = 'spotify_auth_state';
 const fs = require('fs');
 const path = require('path');
-const configPath = path.join(__dirname, '../../config.json');
+const configPath = path.join(__dirname, './../config.json');
 
 // read the file which returns a buffer
 // parse it to get an object and access properties
@@ -18,7 +18,7 @@ const spotifyController = {
   initAuth: (req, res) => {
     // your application requests refresh and access tokens
     // after checking the state parameter
-
+    console.log('initAuth')
     var code = req.query.code || null;
     var state = req.query.state || null;
     var storedState = req.cookies ? req.cookies[stateKey] : null;
@@ -55,6 +55,7 @@ const spotifyController = {
           authConfig.ACCESS_TOKEN = access_token
           // convert the local authConfig object to a buffer to write to file
           fs.writeFileSync(configPath, Buffer.from(JSON.stringify(authConfig)))
+
 
           var options = {
             url: 'https://api.spotify.com/v1/me',
