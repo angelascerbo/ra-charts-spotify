@@ -17,31 +17,14 @@
       userProfileTemplate = Handlebars.compile(userProfileSource),
       userProfilePlaceholder = document.getElementById('user-profile');
 
-  // var oauthSource = document.getElementById('oauth-template').innerHTML,
-  //     oauthTemplate = Handlebars.compile(oauthSource),
-  //     oauthPlaceholder = document.getElementById('oauth');
-
   var params = getHashParams();
-
-  // var access_token = params.access_token,
-  //     refresh_token = params.refresh_token,
-  //     error = params.error;
 
   if (params.error) {
     alert('There was an error during the authentication');
   } else {
     if (params.authenticated) {
-      // render oauth info
-      // oauthPlaceholder.innerHTML = oauthTemplate({
-      //   access_token: access_token,
-      //   refresh_token: refresh_token
-      // });
-
       $.ajax({
           url: '/authenticated',
-          // headers: {
-          //   'Authorization': 'Bearer ' + access_token
-          // },
           success: function(response) {
             userProfilePlaceholder.innerHTML = userProfileTemplate(response);
 
@@ -63,10 +46,6 @@
         }
       }).done(function(data) {
         // access_token = data.access_token;
-        // oauthPlaceholder.innerHTML = oauthTemplate({
-        //   access_token: access_token,
-        //   refresh_token: refresh_token
-        // });
       });
     }, false);
   }
